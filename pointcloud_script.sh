@@ -31,3 +31,17 @@ done
 wait
 
 echo "All point cloud processes finished."
+
+echo "Start compiling run files."
+
+for ((i=0; i<N; i++))
+do
+    echo "Starting process $i"
+
+    python pointcloud_phase.py "$i" "$N" &
+
+    PIDS+=($!)
+
+    sleep 1
+done
+

@@ -54,18 +54,18 @@ def compile_run(run_number: int, trace_path: Path, workspace_path: Path,output_p
 
 def main():
 	
+	run_number = int(sys.argv[1])
+	
 	trace_path = trace_path = Path("/home/danilo-marcato/Documents/Spyral/traces")
 	workspace_path = Path("workspace/Pointcloud_assets/")
 	output_path = Path("workspace/Pointcloud/")
 	
-	for run_number in runs:
 		
-		trace_file_path = trace_path / f"{form_run_string(run_number)}.h5"
-		trace_reader = create_reader(trace_file_path, run_number)
+	trace_file_path = trace_path / f"{form_run_string(run_number)}.h5"
+	trace_reader = create_reader(trace_file_path, run_number)
 		
-		compile_run(run_number, trace_path, workspace_path, output_path)
+	compile_run(run_number, trace_path, workspace_path, output_path)
 
-runs = [46, 89, 95]
      
 if __name__=="__main__":
     main()
