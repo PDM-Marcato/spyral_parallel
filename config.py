@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from spyral import (
     PadParameters,
     GetParameters,
@@ -12,6 +14,12 @@ from spyral import (
     EstimateParameters,
     DEFAULT_MAP,
 )
+
+TRACE_PATH = Path("/home/danilo-marcato/Documents/Spyral/traces")
+WORKSPACE_PATH = Path("workspace/")
+
+WORKSPACE_POINTCLOUD_ASSETS_PATH = WORKSPACE_PATH / "Pointcloud_assets/"
+WORKSPACE_POINTCLOUD_PATH = WORKSPACE_PATH / "Pointcloud/"
 
 PAD_PARAMS = PadParameters(
     pad_geometry_path=DEFAULT_MAP,
