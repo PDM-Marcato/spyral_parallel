@@ -3,7 +3,6 @@ import numpy as np
 import h5py as h5
 
 from spyral.trace.trace_reader import create_reader
-from spyral.core.run_stacks import form_run_string
 
 def run_workspace_dir(workspace_path: Path, run_number: int) -> Path:
     """Scratch folder that holds one .npz per processed event for this run."""
@@ -56,12 +55,11 @@ def main():
 	
 	run_number = int(sys.argv[1])
 	
-	trace_path = trace_path = Path("/home/danilo-marcato/Documents/Spyral/traces")
-	workspace_path = Path("workspace/Pointcloud_assets/")
-	output_path = Path("workspace/Pointcloud/")
+	trace_path = TRACE_PATH
+	workspace_path = WORKSPACE_POINTCLOUD_ASSETS_PATH
+	output_path = WORKSPACE_POINTCLOUD_PATH
 	
-		
-	trace_file_path = trace_path / f"{form_run_string(run_number)}.h5"
+	trace_file_path = trace_path / f"run_{run_number:04d}.h5"
 	trace_reader = create_reader(trace_file_path, run_number)
 		
 	compile_run(run_number, trace_path, workspace_path, output_path)
