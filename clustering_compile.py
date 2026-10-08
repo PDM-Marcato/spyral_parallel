@@ -4,49 +4,7 @@ import h5py as h5
 import re
 import sys
 
-from spyral.core.run_stacks import form_run_string
-from spyral.core.point_cloud import PointCloud
-from spyral.core.clusterize import form_clusters, join_clusters, cleanup_clusters
-from spyral import (
-    ClusterParameters,
-    HdbscanParameters,
-    TripclustParameters,
-    OverlapJoinParameters,
-    ContinuityJoinParameters,
-)
-
-sys.path.append('/home/danilo-marcato/Documents/Spyral_Modification')
-from clusterize_modification import New_Clustering_Method
-
-cluster_params = ClusterParameters(
-    min_cloud_size=30,
-    hdbscan_parameters = None,
-    continuity_join = ContinuityJoinParameters(
-        join_radius_fraction=0.4,
-        join_z_fraction=0.2),
-    overlap_join=None,
-    outlier_scale_factor=0.1,
-    direction_threshold=0.5,
-    tripclust_parameters=TripclustParameters(
-         r=2, #6
-         rdnn=True,
-         k=19, #12
-         n=2, #3
-         a=0.03,
-         s=0.3,
-         sdnn=True,
-         t=0.0,
-         tauto=True,
-         dmax=0.0,
-         dmax_dnn=False,
-         ordered=False,#True
-         link=0,
-         m=5,#50
-         postprocess=False,
-         min_depth=25,
-     ),
-)
-
+from config import WORKSPACE_CLUSTER_ASSETS_PATH, WORKSPACE_CLUSTER_PATH, WORKSPACE_POINTCLOUD_PATH
 
 def run_workspace_dir(workspace_path: Path, run_number: int) -> Path:
     """Scratch folder that holds one .npz per processed event for this run."""
@@ -105,19 +63,17 @@ def compile_cluster_run(run_number: int, point_path: Path,
                     local.create_dataset("cloud", data=npz[f"cluster_{cidx}_data"])
                 compiled += 1
 
-    #print(f"Compiled {compiled} events for run_{run_number} -> {out_file_path}")
+    print(f"Compiled {compiled} events of for run_{run_number} -> {out_file_path}")
     
 def main():
 	
 	run_number = int(sys.argv[1])
-	
-	workspace_path = Path("workspace/")
 
-	workspace_cluster_path = Path("workspace/Cluster_assets/")
-	output_path = Path("workspace/Cluster/")
-	pointcloud_path = workspace_path / "Pointcloud" # this may change if you add custom phases!
+	workspace_cluster_path = WORKSPACE_CLUSTER_ASSETS_PATH
+	output_path = WORKSPACE_CLUSTER_PATH
+	pointcloud_path = WORKSPACE_POINTCLOUD_PATH
 
-	point_file_path = pointcloud_path / f"{form_run_string(run_number)}_pc.h5"
+	point_file_path = pointcloud_path / f"run_{run_number:04d}_pc.h5"
 		
 	compile_cluster_run(run_number, point_file_path, workspace_cluster_path, output_path)
            

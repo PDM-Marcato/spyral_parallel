@@ -44,7 +44,7 @@ def save_event_checkpoint(file_name: Path, run_number: int, idx: int, cloud, eve
         
     np.savez(file_name, **kwargs)
     
-def main(runs, pad_map, get_params, frib_params, rng):
+def main():
     process_id = int(sys.argv[1])
     n_processes = int(sys.argv[2])
     run_number = int(sys.argv[3])

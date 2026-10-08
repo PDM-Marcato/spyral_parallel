@@ -6,46 +6,12 @@ import sys
 
 from spyral.core.run_stacks import form_run_string
 from spyral.core.point_cloud import PointCloud
-from spyral.core.clusterize import form_clusters, join_clusters, cleanup_clusters
-from spyral import (
-    ClusterParameters,
-    HdbscanParameters,
-    TripclustParameters,
-    OverlapJoinParameters,
-    ContinuityJoinParameters,
-)
+from spyral.core.clusterize import cleanup_clusters
+
+from config import WORKSPACE_CLUSTER_ASSETS_PATH, WORKSPACE_CLUSTER_PATH, WORKSPACE_POINTCLOUD_PATH, CLUSTER_PARAMS
 
 sys.path.append('/home/danilo-marcato/Documents/Spyral_Modification')
 from clusterize_modification import New_Clustering_Method
-
-cluster_params = ClusterParameters(
-    min_cloud_size=30,
-    hdbscan_parameters = None,
-    continuity_join = ContinuityJoinParameters(
-        join_radius_fraction=0.4,
-        join_z_fraction=0.2),
-    overlap_join=None,
-    outlier_scale_factor=0.1,
-    direction_threshold=0.5,
-    tripclust_parameters=TripclustParameters(
-         r=2, #6
-         rdnn=True,
-         k=19, #12
-         n=2, #3
-         a=0.03,
-         s=0.3,
-         sdnn=True,
-         t=0.0,
-         tauto=True,
-         dmax=0.0,
-         dmax_dnn=False,
-         ordered=False,#True
-         link=0,
-         m=5,#50
-         postprocess=False,
-         min_depth=25,
-     ),
-)
 
 
 def run_workspace_dir(workspace_path: Path, run_number: int) -> Path:
@@ -90,49 +56,45 @@ def main():
 	
 	process_id = int(sys.argv[1])
 	n_processes = int(sys.argv[2])
+	run_number = int(sys.argv[2])
+
+	workspace_cluster_path = WORKSPACE_CLUSTER_ASSETS_PATH
+
+	pointcloud_path = WORKSPACE_POINTCLOUD_PATH
 	
-	workspace_path = Path("workspace/")
-
-	workspace_cluster_path = Path("workspace/Cluster_assets/")
-
-	pointcloud_path = workspace_path / "Pointcloud"
-
-	runs = [46,89, 95]
+	cluster_params = CLUSTER_PARAMS
 	rng = np.random.default_rng()
-
-	for run_number in runs:
+	
+	point_file_path = pointcloud_path / f"run_{run_number:04d}_pc.h5"
+	point_file = h5.File(point_file_path, 'r')
+	
+	cloud_group: h5.Group = point_file.get('cloud')
+	min_event = cloud_group.attrs['min_event']
+	max_event = cloud_group.attrs['max_event']
+	idx_events = []
+	for idx in range(min_event, max_event+1):
+		event_name = event_name = f"cloud_{idx}"
+		if event_name in cloud_group:
+			idx_events.append(idx)
+	
+	for i, idx in enumerate(idx_events):
 		
-		point_file_path = pointcloud_path / f"{form_run_string(run_number)}_pc.h5"
-		point_file = h5.File(point_file_path, 'r')
-		
-		cloud_group: h5.Group = point_file.get('cloud')
-		min_event = cloud_group.attrs['min_event']
-		max_event = cloud_group.attrs['max_event']
-		idx_events = []
-		for idx in range(min_event, max_event+1):
-			event_name = event_name = f"cloud_{idx}"
-			if event_name in cloud_group:
-				idx_events.append(idx)
-		
-		for i, idx in enumerate(idx_events):
+		if i % n_processes != process_id:
+			continue
 			
-			if i % n_processes != process_id:
-				continue
+		file_name = create_event_file(workspace_cluster_path, run_number, idx)
+		cloud_name = f"cloud_{idx}"
+		cloud_data = cloud_group[cloud_name]
+		cloud = PointCloud(idx, cloud_data[:].copy())
 			
-			file_name = create_event_file(workspace_cluster_path, run_number, idx)
+		if len(cloud)< 30:
+			continue
+			
+		joined, labels = New_Clustering_Method(cloud)
 
-			cloud_name = f"cloud_{idx}"
-			cloud_data = cloud_group[cloud_name]
-			cloud = PointCloud(idx, cloud_data[:].copy())
-			
-			if len(cloud)< 30:
-				continue
-			
-			joined, labels = New_Clustering_Method(cloud)
-
-			cleaned, _ = cleanup_clusters(joined, cluster_params, labels)
-			
-			save_cluster_checkpoint(file_name, idx, cleaned, dict(cloud_data.attrs))
+		cleaned, _ = cleanup_clusters(joined, cluster_params, labels)
+		
+		save_cluster_checkpoint(file_name, idx, cleaned, dict(cloud_data.attrs))
 			
 if __name__=="__main__":
     main()

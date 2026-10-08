@@ -21,6 +21,9 @@ WORKSPACE_PATH = Path("workspace/")
 WORKSPACE_POINTCLOUD_ASSETS_PATH = WORKSPACE_PATH / "Pointcloud_assets/"
 WORKSPACE_POINTCLOUD_PATH = WORKSPACE_PATH / "Pointcloud/"
 
+WORKSPACE_CLUSTER_ASSETS_PATH = WORKSPACE_PATH / "Cluster_assets/"
+WORKSPACE_CLUSTER_PATH = WORKSPACE_PATH / "Cluster/"
+
 PAD_PARAMS = PadParameters(
     pad_geometry_path=DEFAULT_MAP,
     pad_time_path=DEFAULT_MAP,
