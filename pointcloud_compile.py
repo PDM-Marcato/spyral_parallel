@@ -1,14 +1,13 @@
 from pathlib import Path
 import numpy as np
 import h5py as h5
-
+import sys
 from spyral.trace.trace_reader import create_reader
 
-def run_workspace_dir(workspace_path: Path, run_number: int) -> Path:
-    """Scratch folder that holds one .npz per processed event for this run."""
-    d = workspace_path / f"run_{run_number}"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+from config import TRACE_PATH, WORKSPACE_POINTCLOUD_ASSETS_PATH, WORKSPACE_POINTCLOUD_PATH, SPYRAL_MODIFICATION, FRIB_PARAMS
+sys.path.append(SPYRAL_MODIFICATION)
+
+from helper_modification import run_workspace_dir
     
 def compile_run(run_number: int, trace_path: Path, workspace_path: Path,output_path: Path) -> None:
     
@@ -19,7 +18,7 @@ def compile_run(run_number: int, trace_path: Path, workspace_path: Path,output_p
         return
  
     # re-open the trace to recover first/last event metadata, same as before
-    trace_file_path = trace_path / f"{form_run_string(run_number)}.h5"
+    trace_file_path = trace_path / f"run_{run_number:04d}.h5"
     trace_reader = create_reader(trace_file_path, run_number)
     
     out_file_path = output_path / f"run_{run_number:04d}_pc.h5"
@@ -48,21 +47,30 @@ def compile_run(run_number: int, trace_path: Path, workspace_path: Path,output_p
                     pc_dataset.attrs["ic_centroid"] = float(npz["ic_centroid"])
                     pc_dataset.attrs["ic_multiplicity"] = float(npz["ic_multiplicity"])
                 compiled += 1
-                    
+    scalers = trace_reader.read_scalers()
+    if scalers is not None:
+        scalers.write_scalers(output_path / f"run_{run_number:04d}_scaler.parquet")
+    else:
+        print(f"Run {run_number} does not have scaler data")
+
+    # --- gated IC count: sum the per-process files ---
+    ic_within_mult_count = sum(
+        int(p.read_text()) for p in ws_dir.glob("gated_ic_count_*.txt")
+    )
+    gated_ic_path = output_path / f"run_{run_number:04d}_gated_ic_scaler.txt"
+    with open(gated_ic_path, "w") as f:
+        f.write(f"IC counts with multiplicity <= {FRIB_PARAMS.ic_multiplicity}\n")
+        f.write(f"{ic_within_mult_count}")
     print(f"Compiled {compiled} events for run_{run_number} -> {out_file_path}")
+
 
 def main():
 	
 	run_number = int(sys.argv[1])
 	
-	trace_path = TRACE_PATH
-	workspace_path = WORKSPACE_POINTCLOUD_ASSETS_PATH
-	output_path = WORKSPACE_POINTCLOUD_PATH
-	
-	trace_file_path = trace_path / f"run_{run_number:04d}.h5"
-	trace_reader = create_reader(trace_file_path, run_number)
+	WORKSPACE_POINTCLOUD_PATH.mkdir(parents=True, exist_ok=True)
 		
-	compile_run(run_number, trace_path, workspace_path, output_path)
+	compile_run(run_number, TRACE_PATH, WORKSPACE_POINTCLOUD_ASSETS_PATH, WORKSPACE_POINTCLOUD_PATH)
 
      
 if __name__=="__main__":

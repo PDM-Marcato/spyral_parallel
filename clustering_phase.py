@@ -8,21 +8,17 @@ from spyral.core.run_stacks import form_run_string
 from spyral.core.point_cloud import PointCloud
 from spyral.core.clusterize import cleanup_clusters
 
-from config import WORKSPACE_CLUSTER_ASSETS_PATH, WORKSPACE_CLUSTER_PATH, WORKSPACE_POINTCLOUD_PATH, CLUSTER_PARAMS
-
-sys.path.append('/home/danilo-marcato/Documents/Spyral_Modification')
+from config import (
+    WORKSPACE_CLUSTER_ASSETS_PATH,
+    WORKSPACE_CLUSTER_PATH,
+    WORKSPACE_POINTCLOUD_PATH,
+    REV_PARAMS,
+    SPYRAL_MODIFICATION,
+)
+sys.path.append(SPYRAL_MODIFICATION)
 from clusterize_modification import New_Clustering_Method
+from helper_modification import run_workspace_dir, create_event_file
 
-
-def run_workspace_dir(workspace_path: Path, run_number: int) -> Path:
-    """Scratch folder that holds one .npz per processed event for this run."""
-    d = workspace_path / f"run_{run_number}"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-def create_event_file(workspace_path, run_number, idx):
-    file_name = run_workspace_dir(workspace_path, run_number) / f"event_{idx:06d}.npz"
-    return file_name
 
 def save_cluster_checkpoint(file_name: Path, idx: int, cleaned, cloud_attrs) -> None:
     """Save one event's cleaned clusters to an npz checkpoint."""
@@ -56,16 +52,12 @@ def main():
 	
 	process_id = int(sys.argv[1])
 	n_processes = int(sys.argv[2])
-	run_number = int(sys.argv[2])
+	run_number = int(sys.argv[3])
 
 	workspace_cluster_path = WORKSPACE_CLUSTER_ASSETS_PATH
-
-	pointcloud_path = WORKSPACE_POINTCLOUD_PATH
 	
-	cluster_params = CLUSTER_PARAMS
-	rng = np.random.default_rng()
 	
-	point_file_path = pointcloud_path / f"run_{run_number:04d}_pc.h5"
+	point_file_path = WORKSPACE_POINTCLOUD_PATH / f"run_{run_number:04d}_pc.h5"
 	point_file = h5.File(point_file_path, 'r')
 	
 	cloud_group: h5.Group = point_file.get('cloud')
@@ -81,18 +73,19 @@ def main():
 		
 		if i % n_processes != process_id:
 			continue
-			
-		file_name = create_event_file(workspace_cluster_path, run_number, idx)
+		if idx != 3642:
+			continue
+		print(idx)
+		
+		file_name = create_event_file(WORKSPACE_CLUSTER_ASSETS_PATH, run_number, idx)
 		cloud_name = f"cloud_{idx}"
 		cloud_data = cloud_group[cloud_name]
 		cloud = PointCloud(idx, cloud_data[:].copy())
 			
-		if len(cloud)< 30:
+		if len(cloud)< REV_PARAMS.min_cloud_size:
 			continue
 			
-		joined, labels = New_Clustering_Method(cloud)
-
-		cleaned, _ = cleanup_clusters(joined, cluster_params, labels)
+		cleaned = New_Clustering_Method(cloud, REV_PARAMS)
 		
 		save_cluster_checkpoint(file_name, idx, cleaned, dict(cloud_data.attrs))
 			

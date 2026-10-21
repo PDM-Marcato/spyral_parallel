@@ -22,10 +22,11 @@ fi
 # ---------------------------------
 # Logging: copy stdout + stderr to a log file (and keep printing to screen)
 # ---------------------------------
-LOG_FILE="log_$(date +%Y%m%d_%H%M%S).txt"
+#LOG_FILE="log_$(date +%Y%m%d_%H%M%S).txt"
+LOG_FILE="log_pointcloud.txt"
 # To use one fixed file that keeps appending, use instead:
 # LOG_FILE="log.txt"
-exec > >(tee -a "$LOG_FILE") 2>&1
+exec > >(tee "$LOG_FILE") 2>&1
 
 echo "Logging to $LOG_FILE"
 echo "Started: $(date)"
@@ -46,7 +47,7 @@ format_time() {
 }
 
 
-ASSET_DIR="/mnt/analysis/argonne2023/a2066/h5"
+ASSET_DIR="/home/danilo-marcato/Documents/Spyral/traces"
 
 PIDS=()
 

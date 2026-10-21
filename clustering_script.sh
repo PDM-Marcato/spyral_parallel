@@ -25,7 +25,7 @@ fi
 LOG_FILE="log_clustering.txt"
 # To use one fixed file that keeps appending, use instead:
 # LOG_FILE="log.txt"
-exec > >(tee -a "$LOG_FILE") 2>&1
+exec > >(tee "$LOG_FILE") 2>&1
 
 echo "Logging to $LOG_FILE"
 echo "Started: $(date)"
@@ -45,14 +45,14 @@ format_time() {
         $((seconds % 60))
 }
 
-
-ASSET_DIR="workspace/Pointcloud"
+ASSET_DIR="/home/danilo-marcato/Documents/spyral_parallel/workspace/Pointcloud"
+#ASSET_DIR="workspace/Pointcloud"
 
 PIDS=()
 
 cleanup() {
     echo
-    echo "Stopping all point-cloud processes..."
+    echo "Stopping all clustering processes..."
     for pid in "${PIDS[@]}"; do
         kill "$pid" 2>/dev/null
     done
@@ -155,8 +155,8 @@ for file in "${FILES[@]}"; do
         continue
     fi
 
-    echo "All point-cloud processes finished for run $run."
-    echo "Point-cloud phase took ${SECONDS}s."
+    echo "All clustering processes finished for run $run."
+    echo "Clustering phase took ${SECONDS}s."
 
     # Compile this run
     compile_start=$SECONDS
